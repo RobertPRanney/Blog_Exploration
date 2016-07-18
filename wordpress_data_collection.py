@@ -10,6 +10,7 @@
 # Change Log:
 #       7/17/16: file created, trying to replicate functionality from blogger
 #                blogs to wordpress blogs
+#       7/18/16: can fetch blog info and all posts, testing code added
 ###--------------------------------------------------------------------------###
 
 # Import Statements
@@ -22,7 +23,7 @@ import sys
 
 # Constansts Section
 HOST            = "https://public-api.wordpress.com/rest/v1.1/"
-SLEEP_DELAYS    = 0.5
+SLEEP_DELAYS    = 0.2
 
 # Functions Section
 def get_blog_info(url_or_id):
@@ -65,7 +66,6 @@ def get_single_post(site_id, post_id):
     # Display info for user
     print "got {} for post {}".format(single_post.status_code, post_id)
 
-
     return single_post
 
 
@@ -78,11 +78,10 @@ def get_all_posts(blog_id, verbose=False):
         all_posts - list, all post objects
     """
     # build a list of all post objects
-    all_post_ids = []
+    all_posts = []
 
     # Parameters needed for post query
     params = {
-              'offset': 0
     }
 
     # Proper Endpoint for posts query
@@ -92,14 +91,13 @@ def get_all_posts(blog_id, verbose=False):
     posts_stuff = requests.get(HOST + endpoint, params=params)
     sleep(SLEEP_DELAYS)
     try:
-        all_post_ids.extend([post['ID'] for post in posts_stuff.json()['posts']])
+        all_posts.extend(posts_stuff.json()['posts'])
     except:
         print "Problem with intial query to blog: {}".format(blog_id)
 
-
     # Generate a list of all the blogspost ids by following object links
     while 'next_page' in posts_stuff.json()['meta'].keys():
-        params['page_handle'] = posts_stuff.json()['meta']['next_page']   #Add token
+        params['page_handle'] = posts_stuff.json()['meta']['next_page']
 
         # Display info for user
         if verbose:
@@ -109,22 +107,9 @@ def get_all_posts(blog_id, verbose=False):
         posts_stuff = requests.get(HOST + endpoint, params=params)
         sleep(SLEEP_DELAYS)
         try:
-            all_post_ids.extend([post['ID'] for post in posts_stuff.json()['posts']])
+            all_posts.extend(posts_stuff.json()['posts'])
         except:
             print "Problem with subsequent query to blog: {}".format(blog_id)
-
-    print "got all"
-
-    #from list of post ids generate list of post objects
-    all_post_reponses = [get_single_post(blog_id, post_id) for post_id in all_post_ids]
-
-
-    # Ensure all posts got a proper response code
-    all_posts = [response.json() for response in all_post_reponses if response.status_code == 200]
-
-    # See if any bad responses were attempted
-    if verbose:
-        print "attempted {} post queries and receiced {} good(200) responses".format(len(all_post_reponses), len(all_posts))
 
     return all_posts
 
