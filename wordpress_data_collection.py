@@ -5,13 +5,15 @@
 #              data and blog posts from google blogger api. Worth noting that
 #              api is rate limited to 100 / 100  seconds and 10,000 per day
 # Usage: TBD
-# Creation Date: 7/12/16
-# Last Revision: 7/12/16
+# Creation Date: 7/17/16
+# Last Revision: 7/17/16
 # Change Log:
-#       7/12/16: file created, function to pull blogs and post added
+#       7/17/16: file created, trying to replicate functionality from blogger
+#                blogs to wordpress blogs
 ###--------------------------------------------------------------------------###
 
 # Import Statements
+from __future__ import division
 import requests
 import json
 from time import time, sleep
@@ -19,20 +21,11 @@ import pandas as pd
 import sys
 
 # Constansts Section
-BLOG_BY_URL = "https://www.googleapis.com/blogger/v3/blogs/byurl?url={}key={}"
-POSTS_BY_ID = "https://www.googleapis.com/blogger/v3/blogs/{}/posts?key={}"
-
-HOST        = "https://www.googleapis.com/blogger/"
-
-
-# Get kes from json
-with open('keys.json') as f:
-     data = json.load(f)
-     api_key = data['blogger_api_key']
-
+HOST            = "https://public-api.wordpress.com/rest/v1.1/"
+SLEEP_DELAYS    = 0.5
 
 # Functions Section
-def get_a_blog_byurl(url):
+def get_blog_info(url_or_id):
     """
     DESCR: return a blog by providing a url.
     INPUT:
@@ -41,47 +34,40 @@ def get_a_blog_byurl(url):
         blog_stuff  - Response, response object of api request
     """
     # specific endpoint for byurl api request
-    endpoint = "v3/blogs/byurl"
+    endpoint = "sites/{}/".format(url_or_id)
 
     # public request but still needs api key
     params = {
-        "url":url,
-        "key":api_key
     }
 
     # get response
-    blog_stuff = requests.get(HOST + endpoint, params=params)
+    blog_stuff = requests.get(HOST + endpoint)
     sleep(1)
 
-    # avoid 100 / 100 secs api rate limit
+    # no known limit currently, but will keep anyways
     sleep(1)
     return blog_stuff
 
-def get_a_blog_byid(id_num, get_posts=False, nums_posts=1000):
+
+def get_single_post(site_id, post_id):
     """
-    DESCR: return a blog by providing a id. Can also return all the information about posts, such as post ids. Is an option to get posts.
+    DESCR: grabs a single post given a blog idea and post idea
     INPUT:
-        url         - string, any id to a blogspot blog
+        site_id     - int, unique number for site
+        posst_id    - int, unique post id for given site
     OUTPUT:
-        blog_stuff  - Response, response object of api request
+        single_post - response, results of query
     """
-    # specific endpoint for byurl api request
-    endpoint = "v3/blogs/{}".format(id_num)
+    endpoint = "sites/{}/posts/{}".format(site_id, post_id)
+    single_post = requests.get(HOST + endpoint)
+    sleep(SLEEP_DELAYS)
 
-    # public request but still needs api key
-    params = {
-        "key":api_key
-    }
+    # Display info for user
+    print "got {} for post {}".format(single_post.status_code, post_id)
 
-    # Add extra parameter to grab post information
-    if get_posts:
-        params['maxPosts']=nums_posts
 
-    # get response
-    blog_stuff = requests.get(HOST + endpoint, params=params)
-    sleep(1)
+    return single_post
 
-    return blog_stuff
 
 def get_all_posts(blog_id, verbose=False):
     """
@@ -91,35 +77,54 @@ def get_all_posts(blog_id, verbose=False):
     OUTPUT:
         all_posts - list, all post objects
     """
-    # Posts will be returned as a list
-    all_posts = []
+    # build a list of all post objects
+    all_post_ids = []
 
     # Parameters needed for post query
     params = {
-            'blogID':blog_id,
-            'key':api_key,
-            }
+              'offset': 0
+    }
 
     # Proper Endpoint for posts query
-    endpoint = "v3/blogs/{}/posts".format(blog_id)
+    endpoint = "sites/{}/posts/".format(blog_id)
 
     # Query for repsonse and wait
     posts_stuff = requests.get(HOST + endpoint, params=params)
-    sleep(1)
-    all_posts.extend(posts_stuff.json()['items'])
+    sleep(SLEEP_DELAYS)
+    try:
+        all_post_ids.extend([post['ID'] for post in posts_stuff.json()['posts']])
+    except:
+        print "Problem with intial query to blog: {}".format(blog_id)
 
-    # If posts are paginated follow the token to next page
-    while 'nextPageToken' in posts_stuff.json().keys():
-        params['pageToken'] = posts_stuff.json()['nextPageToken']   #Add token
 
-        # Display infor for user
+    # Generate a list of all the blogspost ids by following object links
+    while 'next_page' in posts_stuff.json()['meta'].keys():
+        params['page_handle'] = posts_stuff.json()['meta']['next_page']   #Add token
+
+        # Display info for user
         if verbose:
-            print "{}, {}".format(posts_stuff.status_code, posts_stuff.json()['nextPageToken'])
+            print "{}, {}".format(posts_stuff.status_code, posts_stuff.json()['meta']['next_page'])
 
         # Query and wait
         posts_stuff = requests.get(HOST + endpoint, params=params)
-        sleep(1)
-        all_posts.extend(posts_stuff.json()['items'])
+        sleep(SLEEP_DELAYS)
+        try:
+            all_post_ids.extend([post['ID'] for post in posts_stuff.json()['posts']])
+        except:
+            print "Problem with subsequent query to blog: {}".format(blog_id)
+
+    print "got all"
+
+    #from list of post ids generate list of post objects
+    all_post_reponses = [get_single_post(blog_id, post_id) for post_id in all_post_ids]
+
+
+    # Ensure all posts got a proper response code
+    all_posts = [response.json() for response in all_post_reponses if response.status_code == 200]
+
+    # See if any bad responses were attempted
+    if verbose:
+        print "attempted {} post queries and receiced {} good(200) responses".format(len(all_post_reponses), len(all_posts))
 
     return all_posts
 
@@ -127,9 +132,9 @@ def get_all_posts(blog_id, verbose=False):
 if __name__ == '__main__':
     # for time being code will only be run on import, not from command line
     # code here is simple for ipython testing, and exploration
-    test_url = 'http://newdatascientist.blogspot.com/'
+    test_url = 'datascience101.wordpress.com'
 
-    response = get_a_blog_byurl(test_url)
+    response = get_blog_info(test_url)
 
     print "Quering google for a blog with url: {}\n".format(test_url)
     print "   Got back a response with code {}".format(response.status_code)
@@ -138,7 +143,7 @@ if __name__ == '__main__':
     for key in response.json().keys():
         print "   The key({}) contians: {}".format(key, response.json()[key])
 
-    test_id = response.json()['id']
+    test_id = response.json()['ID']
 
     print "The most inmportant piece from this is the blog id: {}".format(test_id)
 
@@ -152,5 +157,3 @@ if __name__ == '__main__':
     print "Post 0:"
     for key in test_posts[0].keys():
         print "   key({}) holds: {}".format(key, test_posts[0][key])
-
-    
