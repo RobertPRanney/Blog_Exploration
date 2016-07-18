@@ -2,9 +2,10 @@
 # Author: Robert Ranney
 # File: blog_data_collection.py
 # Description: file to contain all necessary functionallity to retrieve blog
-#              data and blog posts from google blogger api. Worth noting that
-#              api is rate limited to 100 / 100  seconds and 10,000 per day
-# Usage: TBD
+#              data and blog posts from google blogger api. As far as I can
+#              tell there is no kind of limiting in place, but will be cautsious
+#              just in case.
+# Usage: import functionally to other scripts, main is just test code
 # Creation Date: 7/17/16
 # Last Revision: 7/17/16
 # Change Log:
@@ -23,7 +24,7 @@ import sys
 
 # Constansts Section
 HOST            = "https://public-api.wordpress.com/rest/v1.1/"
-SLEEP_DELAYS    = 0.2
+SLEEP_DELAYS    = 0.1
 
 # Functions Section
 def get_blog_info(url_or_id):
@@ -43,10 +44,10 @@ def get_blog_info(url_or_id):
 
     # get response
     blog_stuff = requests.get(HOST + endpoint)
-    sleep(1)
+    sleep(SLEEP_DELAYS)
 
     # no known limit currently, but will keep anyways
-    sleep(1)
+    sleep(SLEEP_DELAYS)
     return blog_stuff
 
 
@@ -121,7 +122,7 @@ if __name__ == '__main__':
 
     response = get_blog_info(test_url)
 
-    print "Quering google for a blog with url: {}\n".format(test_url)
+    print "Quering wrodpress for a blog with url: {}\n".format(test_url)
     print "   Got back a response with code {}".format(response.status_code)
     print "   This also contains json object about the blog, keys are {}".format(response.json().keys())
 
