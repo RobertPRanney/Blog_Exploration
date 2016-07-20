@@ -12,6 +12,9 @@
 #       7/17/16: file created, trying to replicate functionality from blogger
 #                blogs to wordpress blogs
 #       7/18/16: can fetch blog info and all posts, testing code added
+#       7/20/16: aggregates strange dicts in post object that were causing key
+#                errors for mongo. Bunch of garbage in those anyways, hopefully
+#                no real info lost.
 ###--------------------------------------------------------------------------###
 
 # Import Statements
@@ -70,6 +73,39 @@ def get_single_post(site_id, post_id):
     return single_post
 
 
+def get_num_posts_byurl(blog_url):
+    response = get_blog_info(blog_url)
+    try:
+        blog_id = response.json()['ID']
+        return get_num_posts_byid(blog_id)
+    except:
+        return 0
+
+
+def get_num_posts_byid(blog_id):
+    """
+    DESCR: finds the number of posts in a blog and returns it, some of these sites have thousands of posts, so they don't eve seem blog like anymore
+    INPUT:
+        blog_id     - int, unique to blog
+    OUTPUT:
+        num   - int, posts number returned from query
+    """
+    # Parameters needed for post query
+    params = {
+    }
+
+    endpoint = "sites/{}/posts/".format(blog_id)
+    posts_stuff = requests.get(HOST + endpoint, params=params)
+    sleep(SLEEP_DELAYS)
+
+    try:
+        num = posts_stuff.json()['found']
+    except:
+        num = 0
+
+    return num
+
+
 def get_all_posts(blog_id, verbose=False):
     """
     DESCR: Gets all the posts of a given blog id. Makes initial api request and continues request following the tokens returned by previous request
@@ -112,13 +148,23 @@ def get_all_posts(blog_id, verbose=False):
         except:
             print "Problem with subsequent query to blog: {}".format(blog_id)
 
+    # This dictionary is a garbage mess of links, and it causes way to manny errors during mongodb insertion, better to just aggregate to a number
+
+    for post in all_posts:
+        post['tags'] = len(post['tags'])
+        post['terms'] = len(post['terms'])
+        post['categories'] = post['categories'].keys()
+        post['attachments'] = len(post['attachments'])
+
+
+
     return all_posts
 
 
 if __name__ == '__main__':
     # for time being code will only be run on import, not from command line
     # code here is simple for ipython testing, and exploration
-    test_url = 'datascience101.wordpress.com'
+    test_url = 'jasetagle.wordpress.com'
 
     response = get_blog_info(test_url)
 

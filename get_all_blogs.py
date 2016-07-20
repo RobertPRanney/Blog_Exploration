@@ -20,14 +20,14 @@ import pandas as pd
 from time import time
 
 # Constant Section
-SAVE_PATH = 'wordpress_dataScience_blogs/'
-BLOG_URLS = 'blog_urls/wordpress_dataScience_blog_domains.csv'
-TEST_NUMBER = 50
+SAVE_PATH = 'wordpress_fitness_blogs/'
+BLOG_URLS = 'blog_urls/wordpress_fitness_blog_domains.csv'
+TEST_NUMBER = 10
 
 # Function Section
 def get_whole_blog(url):
     """
-    DESCR: will grab a blog, and then if seuccessful grab the associated posts
+    DESCR: will grab a blog, and then if successful grab the associated posts
            all of this is put into json object and returned
     INPUT:
             url designating blog location
