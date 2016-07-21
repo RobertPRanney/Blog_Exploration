@@ -7,7 +7,7 @@
 #              just in case.
 # Usage: import functionally to other scripts, main is just test code
 # Creation Date: 7/17/16
-# Last Revision: 7/17/16
+# Last Revision: 7/21/16
 # Change Log:
 #       7/17/16: file created, trying to replicate functionality from blogger
 #                blogs to wordpress blogs
@@ -15,6 +15,7 @@
 #       7/20/16: aggregates strange dicts in post object that were causing key
 #                errors for mongo. Bunch of garbage in those anyways, hopefully
 #                no real info lost.
+#       7/21/16: Now fetches comments, as a list of comment content in a post
 ###--------------------------------------------------------------------------###
 
 # Import Statements
@@ -149,16 +150,52 @@ def get_all_posts(blog_id, verbose=False):
             print "Problem with subsequent query to blog: {}".format(blog_id)
 
     # This dictionary is a garbage mess of links, and it causes way to manny errors during mongodb insertion, better to just aggregate to a number
-
     for post in all_posts:
-        post['tags'] = len(post['tags'])
-        post['terms'] = len(post['terms'])
+        post['tags'] = post['tags'].keys()
+        post['terms'] = post['terms'].keys()
         post['categories'] = post['categories'].keys()
-        post['attachments'] = len(post['attachments'])
+        post['attachments'] = post['attachments'].keys()
 
 
+    # Now retrieve comments for posts
+    for post in all_posts:
+        post['comments'] = get_all_comments(blog_id, post['ID'])
 
     return all_posts
+
+
+def get_all_comments(blog_id, post_id):
+    """
+    DESCR: Gets all comments for given blog_id and post_id
+    INPUT:
+        blog_id - string, specify blog id
+        post_id - string, unique num
+    OUTPUT:
+        comments - list, content of all comments, rest tossed
+    """
+    # Parameters needed for post query
+    params = {
+              'number':100
+    }
+
+    # Proper Endpoint for posts query
+    endpoint = "sites/{}/posts/{}/replies/".format(blog_id, post_id)
+
+    # Query for repsonse and wait, build list of comments
+    try:
+        comment_stuff = requests.get(HOST + endpoint, params=params)
+        sleep(SLEEP_DELAYS)
+
+        if comment_stuff.json()['found'] == 0:
+            return []
+
+        comments = [comment['content'] for comment in comment_stuff.json()['comments']]
+    except:
+        print "Problem with intial query to blog: {} for comments".format(blog_id)
+        return []
+
+    return comments
+
 
 
 if __name__ == '__main__':

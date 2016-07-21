@@ -30,7 +30,7 @@ BLOG_SIZE_MIN = 5
 
 # Define a MongoDb database and table
 db_client = MongoClient()
-db = db_client['fitness_blogs']        # db name
+db = db_client['fitness_blogs_w_comments']        # db name
 table = db['blogs']                         # table(actually collection) name
 
 

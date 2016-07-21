@@ -17,8 +17,17 @@ I seem to have trouble remmbering from day to day so here I will keep track
 * Found issues with key inserts. Post json object has three fields that are dicts where the keys are just whatver garbage a person makes, and the values hold stuff like url. So lots of poorly formatted junk there. Made aggregates of these in data collection step.
 * Rewrote blog collectiion script, is more efficient when limiting size, and is utilizes threading, maybe could even make it multi processing and gather data super fast in the future.
 * Well, didn't understand storage/memory junk, asked tim and erich, now understand it better. New bigger instance, should do better this time.
-* Made a play set from first 100 possible urls, got 71 blogs to play with, dumped to csv file with mongo export, not sure if this is best way, ask tommorow. 
+* Made a play set from first 100 possible urls, got 71 blogs to play with, dumped to csv file with mongo export, not sure if this is best way, ask tommorow.
+* Made progress on looking through structure and brain storming feature engineering
+
+##### 7/21 - Thursday
+* Looking through structure some more, chart all done and laid out
+* added comments to post collection, probably could have done them as insert to mongo, but I am crap at mongo so quick and lazy is add them to script and re collect
+* Change all arggrate dicts in collection to return list of keys
+* Collecting new database with comments on ec2 instance. This drastically increases the time of collection. Can get 20 posts per call, but getting comments then requires 20 mores calls. Yuck. Time maybe 10 hours, maybe time to think about multiple cores.
+
 
 
 * TO DO:
     1) polish resume, finsih structure chart of data, I keep getting confused, start thinking of way to filter to a usable amount of blogs. Investigate on small local subset.
+    2) If data is recollected maybe return list of terms keys instead of len()
