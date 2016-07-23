@@ -25,9 +25,23 @@ I seem to have trouble remmbering from day to day so here I will keep track
 * added comments to post collection, probably could have done them as insert to mongo, but I am crap at mongo so quick and lazy is add them to script and re collect
 * Change all arggrate dicts in collection to return list of keys
 * Collecting new database with comments on ec2 instance. This drastically increases the time of collection. Can get 20 posts per call, but getting comments then requires 20 mores calls. Yuck. Time maybe 10 hours, maybe time to think about multiple cores.
+* Need to choose NLP method for posts ---
+* Have game plan  --- A good blog is made from good posts, so first step is to make a model for just good posts. Going to take all
+
+##### 7/22 - Friday
+* cleaning of blog dataframe continues
+* cleaning of posts dataframe continues
 
 
 
 * TO DO:
-    1) polish resume, finsih structure chart of data, I keep getting confused, start thinking of way to filter to a usable amount of blogs. Investigate on small local subset.
-    2) If data is recollected maybe return list of terms keys instead of len()
+    1) polish resume,
+    2) I keep getting confused, start thinking of way to filter to a usable amount of blogs.
+    3) Investigate on small local subset.
+    4) Make function to throw out non relevant bogs
+
+
+NLP For Post:
+1) make df for all posts
+2) vectorize all content of posts
+3)
