@@ -6,3 +6,4 @@ wordpress_dataScience_blogs
 data/
 *.txt
 mongodb_practice/
+*.pkl

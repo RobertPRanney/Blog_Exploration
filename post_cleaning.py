@@ -1,24 +1,32 @@
 ###--------------------------------------------------------------------------###
 # Author: Robert Ranney
-# File: post_nlp.py
+# File: post_cleaning.py
 # Description: exploring nlp possibilties on posts
-# Usage: tbd
+# Usage: python post_cleaning
 # Creation Date: 7/21/16
-# Last Revision: 7/22/16
+# Last Revision: 7/23/16
 # Change Log:
 #      7/21/16: Exploration started
-#      7/22/16:
+#      7/22/16: TFIDF made for post dataframe
+#      7/23/16: NMF made for post dataframe, reconstruction error plot started
+#               reconstruction of 1-100 error plot not sufficient, moved to
+#               seperate file for running on aws for longer period
+#               running file now loads a pickled blog df, and saved stuff as
+#               pickled stuff
 ###--------------------------------------------------------------------------###
 
 # Import Section
 from sklearn.decomposition import NMF
-from data_cleaning import get_df, clean_df
 import pandas as pd
 from bs4 import BeautifulSoup
 from string import punctuation
 from nltk.stem.wordnet import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
+import matplotlib.pyplot as plt
+from helpers import date_convert_w_error
+from helpers import DF_BLOGS_UNCHANGED_PICKLE
+import cPickle as pickle
 
 # Constants
 EXTRA_STOP_WORDS = []
@@ -56,19 +64,6 @@ def get_posts_df_from_blog_df(df, post_col='post_list'):
     return post_df
 
 
-def date_convert_w_error(date_string):
-    """
-    DESCR: to use in lambda date conversion to avoid wierd poor formatting errors that make pandas throw a fit, random date is then returned, this should only be used to avoid very uncommon errors.
-    INPUT: date in string or unicode format
-    OUTPUT: pandas date object
-    """
-    try:
-        return pd.to_datetime(date_string)
-    except:
-        print "used error section"
-        return pd.to_datetime('2015-01-04 10:10:10')
-
-
 def clean_post_df(df):
     """
     DESCR: does some intial clenaing of post df, not a lot of though in some of these, currently many things just get dropped.
@@ -103,8 +98,11 @@ def clean_post_df(df):
 
 def get_text_from_content(df):
     """
-    DESCR: takes the content column and turns it into a list of tokens that have had all punctuation removed and stop words removed and then lemmatized
+    DESCR: takes the content column that is html, get the text from it
+    INPUT: df with a content column that is html
+    OUPTUT: df that has a content column ths is now text
     """
+    # Retrive text
     df['content'] = df['content'].apply(lambda x: BeautifulSoup(x, 'lxml').get_text())
 
     # Somehow get some empty posts, thorws these away
@@ -122,6 +120,7 @@ def tokenize_content(content):
     # Get rid of all punctuation, lowercase words, and split on ws
     tokens = [word.strip().strip(punctuation) for word in content.lower().split()]
 
+
     # remove stop words
     tokens = [word for word in tokens if word not in STOP_WORDS]
 
@@ -131,13 +130,38 @@ def tokenize_content(content):
     return tokens
 
 
-def nmf_on_df(content_series):
+def tfidf_posts(post_series):
     """
     DESCR: perform nmf on content portion of df and return the nmf
+    INPUT: a series full of blog post text, reach row is one post string
+    OUTPUT: the resultant tfidf matrix and
+            the tfidf object
     """
+    # Make vectorizer object
+    tfidf = TfidfVectorizer(decode_error='ignore', tokenizer=tokenize_content, max_df=1.0, min_df=5, max_features=20000, norm='l2', use_idf=True, smooth_idf=True, sublinear_tf=False)
+
+    # Make transformed document matrix
+    tfidf_matrix = tfidf.fit_transform(post_series)
+
+    return tfidf_matrix, tfidf
 
 
-    tfidf_matrix = tfidf.fit_transform(content_series)
+def nmf_on_posts(posts_tfidf, latent_features=15):
+    """
+    DESCR: perform NMF on on a tfidf matrix of blog posts
+    INPUT: tfidf matrix
+           num of latent features to decompose to
+    OUTPUT: W_matrix - matrix of rows still as documents and columns as
+                       latent features
+            latent_features - columns in resultant W matrix
+    """
+    nmf = NMF(n_components=latent_features, tol=0.0001, max_iter=200, random_state=45, alpha=0.0, l1_ratio=0.0, verbose=0, shuffle=False, nls_max_iter=2000, sparseness=None, beta=1, eta=0.1)
+
+    #fit model to post data, and then return transformed matrix
+
+    W_matrix = nmf.fit_transform(posts_tfidf)
+    return W_matrix, nmf
+
 
 
 
@@ -147,13 +171,35 @@ def make_success_col(df):
     INPUT: df, needs column for likes and comments
     OUPUT:
     """
-    pass
-    #maybe note needed yet
+    df['success'] = df[like_count].apply(lambda x: x)
 
 
 if __name__ == '__main__':
-    df = get_df()
-    df = clean_df(df)
+    # Load pickled data framepost_nlp
+    print "Loading blog dataframe from {}".format(DF_BLOGS_UNCHANGED_PICKLE)
+    df = pd.read_pickle(DF_BLOGS_UNCHANGED_PICKLE)
+    print "   DF loaded has {} blogs".format(df.shape[0])
+
+    # Turn into just a dataframe abot posts
+    print "   Converting blog posts lists to post df..."
     post_df = get_posts_df_from_blog_df(df)
+    print "   Post data frame has {} blog posts".format(post_df.shape[0])
+
+    # Clean up post dataframe
     post_df = clean_post_df(post_df)
     post_df = get_text_from_content(post_df)
+    print "   After cleaning post df has {} posts".format(post_df.shape[0])
+
+    # transform posts series in to tfidf matrix
+    print "   Converting post content to tfidf matrix..."
+    tfidf_matrix, tfidf = tfidf_posts(post_df['content'])
+    with open('post_tfidf_matrix.pkl', 'w') as f:
+        pickle.dump(tfidf_matrix, f)
+    with open('post_tfidf.pkl', 'w') as f:
+        pickle.dump(tfidf, f)
+    print "   tfidf object pickled as {}".format('post_tfidf.pkl')
+    print "   tfidf matrix saved as {}".format('post_tfidf_matrix.pkl')
+
+
+    # perform NMF on tfidf post matrix
+    W_matrix, nmf = nmf_on_posts(tfidf_matrix, 25)

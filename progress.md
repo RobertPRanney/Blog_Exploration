@@ -31,17 +31,25 @@ I seem to have trouble remmbering from day to day so here I will keep track
 ##### 7/22 - Friday
 * cleaning of blog dataframe continues
 * cleaning of posts dataframe continues
+* all blog posts put into data frame
+* tfidf for blogs created
+* tossed out empty blogs, not sure how I have empty blogs
+* Not the most productive day
+
+##### 7/23 - Saturday
+* got nmf for tfidf
+* wrote function to calculate values needed for reconstruction_err plot
+* relocated accesssory stuff to a helper file, can import multiple use stuff from here to keep things nice an organized
+* writing functions to sort out irrelevant blogs 
 
 
 
 * TO DO:
     1) polish resume,
-    2) I keep getting confused, start thinking of way to filter to a usable amount of blogs.
+    2) Start thinking of way to filter to a usable amount of blogs.
     3) Investigate on small local subset.
     4) Make function to throw out non relevant bogs
 
 
 NLP For Post:
-1) make df for all posts
-2) vectorize all content of posts
-3)
+3) encapsulate
