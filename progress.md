@@ -40,7 +40,12 @@ I seem to have trouble remmbering from day to day so here I will keep track
 * got nmf for tfidf
 * wrote function to calculate values needed for reconstruction_err plot
 * relocated accesssory stuff to a helper file, can import multiple use stuff from here to keep things nice an organized
-* writing functions to sort out irrelevant blogs 
+* writing functions to sort out irrelevant blogs
+* pushed files aws for testing, but it failed, deal with it tomorrow
+
+##### 7/24 - Sunday
+* increased instance size to 30GB to handle the size of the data frame after pulling out of mongo
+* started a flow diagram on lucid charts to keep track of stuff 
 
 
 
@@ -48,7 +53,7 @@ I seem to have trouble remmbering from day to day so here I will keep track
     1) polish resume,
     2) Start thinking of way to filter to a usable amount of blogs.
     3) Investigate on small local subset.
-    4) Make function to throw out non relevant bogs
+    4) diagram out pipeline
 
 
 NLP For Post:

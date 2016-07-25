@@ -5,5 +5,4 @@ wordpress_dataScience_blogs
 *.pyc
 data/
 *.txt
-mongodb_practice/
 *.pkl

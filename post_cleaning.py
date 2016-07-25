@@ -13,17 +13,16 @@
 #               seperate file for running on aws for longer period
 #               running file now loads a pickled blog df, and saved stuff as
 #               pickled stuff
+#      7/24/16: moved nmf function to post_modeling, pickled post tfidf and df
 ###--------------------------------------------------------------------------###
 
 # Import Section
-from sklearn.decomposition import NMF
 import pandas as pd
 from bs4 import BeautifulSoup
 from string import punctuation
 from nltk.stem.wordnet import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
-import matplotlib.pyplot as plt
 from helpers import date_convert_w_error
 from helpers import DF_BLOGS_UNCHANGED_PICKLE
 import cPickle as pickle
@@ -138,31 +137,12 @@ def tfidf_posts(post_series):
             the tfidf object
     """
     # Make vectorizer object
-    tfidf = TfidfVectorizer(decode_error='ignore', tokenizer=tokenize_content, max_df=1.0, min_df=5, max_features=20000, norm='l2', use_idf=True, smooth_idf=True, sublinear_tf=False)
+    tfidf = TfidfVectorizer(decode_error='ignore', tokenizer=tokenize_content, max_df=1.0, min_df=5, max_features=10000, norm='l2', use_idf=True, smooth_idf=True, sublinear_tf=False)
 
     # Make transformed document matrix
     tfidf_matrix = tfidf.fit_transform(post_series)
 
     return tfidf_matrix, tfidf
-
-
-def nmf_on_posts(posts_tfidf, latent_features=15):
-    """
-    DESCR: perform NMF on on a tfidf matrix of blog posts
-    INPUT: tfidf matrix
-           num of latent features to decompose to
-    OUTPUT: W_matrix - matrix of rows still as documents and columns as
-                       latent features
-            latent_features - columns in resultant W matrix
-    """
-    nmf = NMF(n_components=latent_features, tol=0.0001, max_iter=200, random_state=45, alpha=0.0, l1_ratio=0.0, verbose=0, shuffle=False, nls_max_iter=2000, sparseness=None, beta=1, eta=0.1)
-
-    #fit model to post data, and then return transformed matrix
-
-    W_matrix = nmf.fit_transform(posts_tfidf)
-    return W_matrix, nmf
-
-
 
 
 def make_success_col(df):
@@ -171,7 +151,24 @@ def make_success_col(df):
     INPUT: df, needs column for likes and comments
     OUPUT:
     """
-    df['success'] = df[like_count].apply(lambda x: x)
+    df['num'] = (df['like_count'] * 2) + df['num_comments']
+    df['success'] = df['num'].apply(succes_ranges)
+    df.drop('num', axis=1, inplace=True)
+    return df
+
+
+def succes_ranges(num):
+    if num == 0:
+        return "no traction"
+
+    elif num < 5:
+        return "some traction"
+
+    elif num < 15:
+        return "good traction"
+
+    else:
+        return "great traction"
 
 
 if __name__ == '__main__':
@@ -190,16 +187,17 @@ if __name__ == '__main__':
     post_df = get_text_from_content(post_df)
     print "   After cleaning post df has {} posts".format(post_df.shape[0])
 
+    # Make a categorical success column
+    post_df = make_success_col(post_df)
+
     # transform posts series in to tfidf matrix
     print "   Converting post content to tfidf matrix..."
     tfidf_matrix, tfidf = tfidf_posts(post_df['content'])
-    with open('post_tfidf_matrix.pkl', 'w') as f:
-        pickle.dump(tfidf_matrix, f)
-    with open('post_tfidf.pkl', 'w') as f:
-        pickle.dump(tfidf, f)
+
+    # pickle everything for later
+    pickle.dump( tfidf_matrix, open( 'post_tfidf_matrix.pkl', "wb" ) )
+    pickle.dump( tfidf, open( 'post_tfidf.pkl', "wb" ) )
+    post_df.to_pickle('post_df.pkl')
     print "   tfidf object pickled as {}".format('post_tfidf.pkl')
     print "   tfidf matrix saved as {}".format('post_tfidf_matrix.pkl')
-
-
-    # perform NMF on tfidf post matrix
-    W_matrix, nmf = nmf_on_posts(tfidf_matrix, 25)
+    print "   post df saved as {}".format('post_df.pkl')

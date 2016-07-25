@@ -4,7 +4,7 @@
 # Description: start of cleaning process, may not hold full pipeline
 # Usage: python data_cleaning.py <df pickle name>
 # Creation Date: 7/20/16
-# Last Revision: 7/23/16
+# Last Revision: 7/24/16
 # Change Log:
 #      7/20/16: Rough file to store cleaning commands.
 #               May turn into part of pipeline in the future.
@@ -13,6 +13,12 @@
 #      7/23/16: aded function to filter out irrelevant blogs
 #               moved some functions and constants to helper file
 #               can now from from command line to load, clean and resave as pkl
+#      7/24/16: freezes when trying to run on whole data set on aws. Rewritten
+#               to iterate through mongo cursor object and append documents one
+#               at a time to dataframe
+#               Ok still won;t run on aws, runs out of memory, not sure how a
+#               1.5G mongo blows up to 15G in df, probably my bad usage. Rather
+#               than be smart run this one a large (30-60G) instance
 ###--------------------------------------------------------------------------###
 
 # Import Section
@@ -42,10 +48,23 @@ def get_df(db_name='fitness_blogs_w_comments', coll_name='blogs'):
     coll = db[coll_name]            # specify collection
 
     # Make a cursor object for all documents in collection
-    test = coll.find()              # make a cursor object
+    doc_gen = coll.find()           # make a cursor object
 
-    # Genreate a list ann DF from the cursor object
-    df = pd.DataFrame(list(test))   # create dataframe from cursor
+    # initlaizze the dataframe from first row
+    first = doc_gen.next()
+    df = pd.DataFrame([first])
+
+    # Continue building datframe one at a time from cursor object
+    try:
+        blog_num = 0
+        while doc_gen.alive:
+            print blog_num
+            new_row = doc_gen.next()
+            df = df.append([new_row])
+            blog_num += 1
+    except:
+        print "Cursor empty"
+
     return df
 
 
@@ -105,7 +124,13 @@ def num_authors(posts):
     INPUT: posts - list of post
     OUTPUT: int of authors
     """
-    return len(set([post['author']['ID'] for post in posts]))
+    # Very pretty one liner, but not robust enough, put in try except to handle a cases that throw errors, will probably throw out a few too many blogs
+    try:
+        num = len(set([post['author']['ID'] for post in posts]))
+    except:
+        return 2 # this will throw malformed blog away
+
+    return num
 
 
 def relevant_blog(post_list, limit, key_words=KEY_WORDS):
