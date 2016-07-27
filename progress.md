@@ -54,18 +54,18 @@ I seem to have trouble remmbering from day to day so here I will keep track
 * scripts to pick out latent features topic words written, words put to text file
 
 ##### 7/26 - Tuesday
+* Code cleaned up and ran on aws
 
-
-##### 7/27 - Wednesday 
-
+##### 7/27 - Wednesday
+* final feature engineering for blogs underway
+* blogs now have post classifcation lists
+* reduced nmf to 30 for interpretability
 
 
 * TO DO:
     1) start re running pipeline on aws, been lots of changes, maybe just delete and redo
-    2) get pickled stuff more structure
     1) polish resume,
     3) Investigate on small local subset.
-    4) diagram out pipeline
     5) eda on data should be done soon for presentation purposes
     6) should really do some topic exploration on whole awas data, will need to write locally first though.
     7) if given time make multiclass roc curve
