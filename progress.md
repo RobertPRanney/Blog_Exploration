@@ -45,15 +45,30 @@ I seem to have trouble remmbering from day to day so here I will keep track
 
 ##### 7/24 - Sunday
 * increased instance size to 30GB to handle the size of the data frame after pulling out of mongo
-* started a flow diagram on lucid charts to keep track of stuff 
+* started a flow diagram on lucid charts to keep track of stuff
+* nmf on posts done and then remerged to post data frame for modeling
+
+##### 7/25 - Monday
+* made framework to perform gridsearch for models and then pickle best model
+* wrote script to plot confusion matrix for all pickled models
+* scripts to pick out latent features topic words written, words put to text file
+
+##### 7/26 - Tuesday
+
+
+##### 7/27 - Wednesday 
 
 
 
 * TO DO:
+    1) start re running pipeline on aws, been lots of changes, maybe just delete and redo
+    2) get pickled stuff more structure
     1) polish resume,
-    2) Start thinking of way to filter to a usable amount of blogs.
     3) Investigate on small local subset.
     4) diagram out pipeline
+    5) eda on data should be done soon for presentation purposes
+    6) should really do some topic exploration on whole awas data, will need to write locally first though.
+    7) if given time make multiclass roc curve
 
 
 NLP For Post:

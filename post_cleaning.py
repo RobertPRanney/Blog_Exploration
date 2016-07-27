@@ -1,10 +1,11 @@
 ###--------------------------------------------------------------------------###
 # Author: Robert Ranney
 # File: post_cleaning.py
-# Description: exploring nlp possibilties on posts
+# Description: takes a data fraom of blogs, pulls out the posts and the cleans
+#              them in preparation for ML algorithms
 # Usage: python post_cleaning
 # Creation Date: 7/21/16
-# Last Revision: 7/23/16
+# Last Revision: 7/26/16
 # Change Log:
 #      7/21/16: Exploration started
 #      7/22/16: TFIDF made for post dataframe
@@ -14,23 +15,24 @@
 #               running file now loads a pickled blog df, and saved stuff as
 #               pickled stuff
 #      7/24/16: moved nmf function to post_modeling, pickled post tfidf and df
+#      7/25/16: changing up 'success' some, added new features for commented
+#               enabled and for number of images and links
+#      7/26?16: change save location of pickles, file should be done now
 ###--------------------------------------------------------------------------###
 
 # Import Section
 import pandas as pd
 from bs4 import BeautifulSoup
-from string import punctuation
-from nltk.stem.wordnet import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
-from nltk.corpus import stopwords
-from helpers import date_convert_w_error
-from helpers import DF_BLOGS_UNCHANGED_PICKLE
+from helpers import date_convert_w_error, tokenize_content
 import cPickle as pickle
 
+
 # Constants
-EXTRA_STOP_WORDS = []
-STOP_WORDS = stopwords.words('english')
-STOP_WORDS.extend(EXTRA_STOP_WORDS)
+BLOG_DF_W_POSTS_PICKLE      = 'pickled_dfs/blog_df_w_posts.pkl'
+POST_TFIDF_MATRIX_PICKLE    = 'other_pickles/post_tfidf_matrix.pkl'
+POST_TFIDF_PICKLE           = 'other_pickles/post_tfidf.pkl'
+POST_DF_PICKLE              = 'pickled_dfs/post_df.pkl'
 
 
 # Function Section
@@ -63,6 +65,16 @@ def get_posts_df_from_blog_df(df, post_col='post_list'):
     return post_df
 
 
+def tag_counter(tag_name, html):
+    """
+    DESCR: use to find some information about extra stuff in html content
+    INPUT: tag to count, and html content to look in
+    OUTPUT: integer count fo tag
+    """
+    soup = BeautifulSoup(html, "lxml")
+    return len(soup.find_all(tag_name))
+
+
 def clean_post_df(df):
     """
     DESCR: does some intial clenaing of post df, not a lot of though in some of these, currently many things just get dropped.
@@ -75,22 +87,24 @@ def clean_post_df(df):
 
     # Play with the dates a bit to make them useful
     df['date'] = df['date'].apply(lambda x: date_convert_w_error(x))
-    df['day_of_week'] = df['date'].dt.dayofweek
-    df['year'] = df['date'].dt.year
-    df['month'] = df['date'].dt.month
+    df['day_of_week'] = df['date'].apply(lambda x: x.weekday())
+    df['year'] = df['date'].apply(lambda x: x.year)
+    df['month'] = df['date'].apply(lambda x: x.month)
 
     # Sum a bunch of list columsn, maybe do better later
     df['num_comments'] = df['comments'].apply(lambda x: len(x))
-    df['num_terms'] = df['terms'].apply(lambda x: len(x))
+    df['comments_enabled'] = df['discussion'].apply(lambda x: x['comments_open'])
     df['num_tags'] = df['tags'].apply(lambda x: len(x))
     df['num_cats'] = df['categories'].apply(lambda x: len(x))
     df['num_pub_urls'] = df['publicize_URLs'].apply(lambda x: len(x))
     df['num_other_urls'] = df['other_URLs'].apply(lambda x: len(x))
     df['standard_post'] = df['format'].apply(lambda x: True if x=='standard' else False)
+    df['num_links'] = df['content'].apply(lambda x: tag_counter('a', x))
+    df['num_images'] = df['content'].apply(lambda x: tag_counter('img', x))
 
 
     #Drop, may put some more effort into some of these later
-    df.drop(['title', 'excerpt', 'terms', 'tags', 'categories', 'comments', 'attachments', 'publicize_URLs', 'other_URLs', 'geo', 'format', 'guid', 'featured_image','discussion', 'date'], axis=1, inplace=True)
+    df.drop(['title', 'excerpt', 'terms', 'tags', 'categories', 'comments', 'attachments', 'publicize_URLs', 'other_URLs', 'geo', 'format', 'guid', 'featured_image','discussion', 'date', 'terms'], axis=1, inplace=True)
 
     return df
 
@@ -108,25 +122,6 @@ def get_text_from_content(df):
     df = df[post_df['content'].apply(lambda x: x.strip()) != ""]
 
     return df
-
-
-def tokenize_content(content):
-    """
-    DESCR: takes a big string, makes all lower, splits on ws, and strip junk to give backa nice tokenized list of words, may have to keep adding, also remove stop words
-    INPUT: string
-    OUTPUT: list of tokens
-    """
-    # Get rid of all punctuation, lowercase words, and split on ws
-    tokens = [word.strip().strip(punctuation) for word in content.lower().split()]
-
-
-    # remove stop words
-    tokens = [word for word in tokens if word not in STOP_WORDS]
-
-    # lemmatize tokens
-    lemmer = WordNetLemmatizer()
-    tokens = [lemmer.lemmatize(token) for token in tokens]
-    return tokens
 
 
 def tfidf_posts(post_series):
@@ -158,13 +153,19 @@ def make_success_col(df):
 
 
 def succes_ranges(num):
+    """
+    DESCR: Function to seperate out success into categories. Current separtion
+           on test set gives about 50/20/15/15 seperation
+    INPUT: num (likes + comments)
+    OUTPUT: string (successcategory)
+    """
     if num == 0:
         return "no traction"
 
-    elif num < 5:
+    elif num < 3:
         return "some traction"
 
-    elif num < 15:
+    elif num < 10:
         return "good traction"
 
     else:
@@ -173,8 +174,8 @@ def succes_ranges(num):
 
 if __name__ == '__main__':
     # Load pickled data framepost_nlp
-    print "Loading blog dataframe from {}".format(DF_BLOGS_UNCHANGED_PICKLE)
-    df = pd.read_pickle(DF_BLOGS_UNCHANGED_PICKLE)
+    print "Loading blog dataframe from {}".format(BLOG_DF_W_POSTS_PICKLE)
+    df = pd.read_pickle(BLOG_DF_W_POSTS_PICKLE)
     print "   DF loaded has {} blogs".format(df.shape[0])
 
     # Turn into just a dataframe abot posts
@@ -195,9 +196,9 @@ if __name__ == '__main__':
     tfidf_matrix, tfidf = tfidf_posts(post_df['content'])
 
     # pickle everything for later
-    pickle.dump( tfidf_matrix, open( 'post_tfidf_matrix.pkl', "wb" ) )
-    pickle.dump( tfidf, open( 'post_tfidf.pkl', "wb" ) )
-    post_df.to_pickle('post_df.pkl')
-    print "   tfidf object pickled as {}".format('post_tfidf.pkl')
-    print "   tfidf matrix saved as {}".format('post_tfidf_matrix.pkl')
-    print "   post df saved as {}".format('post_df.pkl')
+    pickle.dump( tfidf_matrix, open( POST_TFIDF_MATRIX_PICKLE, "wb" ) )
+    pickle.dump( tfidf, open( POST_TFIDF_PICKLE, "wb" ) )
+    post_df.to_pickle(POST_DF_PICKLE)
+    print "   tfidf object pickled as {}".format(POST_TFIDF_PICKLE)
+    print "   tfidf matrix saved as {}".format(POST_TFIDF_MATRIX_PICKLE)
+    print "   post df saved as {}".format(POST_DF_PICKLE)

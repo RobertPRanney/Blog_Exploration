@@ -14,7 +14,7 @@
 ###--------------------------------------------------------------------------###
 
 # Import Section
-from post_modeling import nmf_on_posts
+from helpers import nmf_on_posts
 import cPickle as pickle
 import sys
 

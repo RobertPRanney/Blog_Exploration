@@ -1,0 +1,15 @@
+Model: MultinomialNB, Score_used: precision_score, Score: 0.426746117603, Params: {'alpha': 1.0}
+
+Model: MultinomialNB, Score_used: accuracy_score, Score: 0.348578943523, Params: {'alpha': 1.0}
+
+Model: MultinomialNB, Score_used: recall_score, Score: 0.348578943523, Params: {'alpha': 1.0}
+
+Model: RandomForestClassifier, Score_used: accuracy_score, Score: 0.663257105282, Params: {'max_features': None, 'n_estimators': 100, 'criterion': 'gini'}
+
+Model: RandomForestClassifier, Score_used: precision_score, Score: 0.634492669437, Params: {'max_features': None, 'n_estimators': 25, 'criterion': 'gini'}
+Model: RandomForestClassifier, Score_used: recall_score, Score: 0.66384160152, Params: {'max_features': None, 'n_estimators': 100, 'criterion': 'gini'}
+
+Model: AdaBoostClassifier, Score_used: accuracy_score, Score: 0.607688634193, Params: {'n_estimators': 50, 'learning_rate': 1.0}
+
+Model: GradientBoostingClassifier, Score_used: accuracy_score, Score: 0.639843998727, Params: {'max_features': None, 'min_samples_split': 25, 'n_estimators': 50, 'max_depth': 9}
+

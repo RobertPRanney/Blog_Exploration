@@ -1,10 +1,12 @@
 ###--------------------------------------------------------------------------###
 # Author: Robert Ranney
 # File: data_cleaning.py
-# Description: start of cleaning process, may not hold full pipeline
-# Usage: python data_cleaning.py <df pickle name>
+# Description: takes a dataframe of posts and prepares it so that it can be used
+#              to fit models to decide on blog factors that contribute to
+#              success.
+# Usage: python data_cleaning.py 
 # Creation Date: 7/20/16
-# Last Revision: 7/24/16
+# Last Revision: 7/26/16
 # Change Log:
 #      7/20/16: Rough file to store cleaning commands.
 #               May turn into part of pipeline in the future.
@@ -19,20 +21,26 @@
 #               Ok still won;t run on aws, runs out of memory, not sure how a
 #               1.5G mongo blows up to 15G in df, probably my bad usage. Rather
 #               than be smart run this one a large (30-60G) instance
+#      7/26/16: Last time through. Going to do final feature engineering so that
+#               hopefully this will be ready to start using to fit models.
+#               saves a df with posts and one without posts
 ###--------------------------------------------------------------------------###
 
 # Import Section
 from __future__ import division
 from pymongo import MongoClient
 import pandas as pd
+import numpy as np
+import sys
 from helpers import FITNESS_KEY_WORDS as KEY_WORDS
 from helpers import date_convert_w_error
-from helpers import DF_BLOGS_UNCHANGED_PICKLE
-import sys
 
 
 # Constant Section
-PROPER_USAGE        = 'python data_cleaning.py <df pickle name - optional>'
+PROPER_USAGE            = 'python data_cleaning.py <df pickle name - optional>'
+PERCENT_RELEVANT        = 0.7       # Percent blogs that need to be on topic
+BLOG_DF_W_POSTS_PICKLE  = 'pickled_dfs/blog_df_w_posts.pkl'
+BLOG_DF_WO_POSTS_PICKLE = 'pickled_dfs/blog_df_wo_posts.pkl'
 
 
 # Main Function Section
@@ -58,7 +66,7 @@ def get_df(db_name='fitness_blogs_w_comments', coll_name='blogs'):
     try:
         blog_num = 0
         while doc_gen.alive:
-            print blog_num
+            print "Retrieveing num: {}".format(blog_num)
             new_row = doc_gen.next()
             df = df.append([new_row])
             blog_num += 1
@@ -85,7 +93,7 @@ def clean_df(df):
     OUTPUT: clean DF
     """
     # Get rid of stuff that just has no chance of being useful
-    worthless = ['_id', 'visible', 'is_private', 'is_following']
+    worthless = ['_id', 'visible', 'is_private', 'is_following', 'logo', 'meta']
     df.drop(worthless, axis=1, inplace=True)
 
     # New Features Section
@@ -109,9 +117,16 @@ def clean_df(df):
     df['num_posts'] = df['post_list'].apply(lambda x: len(x))
     df['start_date'] = df['post_list'].apply(lambda x: min([date_convert_w_error(post['modified']) for post in x]))
     df['most_recent_date'] = df['post_list'].apply(lambda x: max([date_convert_w_error(post['modified']) for post in x]))
+    df['blog_life_in_days'] = (df['most_recent_date'] - df['start_date']).apply(lambda x: x.days)
 
 
-    # Drop non blogs ie more than oe author
+    # Create likes hist, comments hist, avg and std in post gaps
+    df['likts_history'] = df['post_list'].apply(lambda x: posts_to_likes(x))
+    df['comment_history'] = df['post_list'].apply(lambda x: post_to_comments(x))
+    df['average_gap'] = df['post_list'].apply(lambda x: avg_and_stddev_days_between_posts(x)[0])
+    df['std_dev_gap'] = df['post_list'].apply(lambda x: avg_and_stddev_days_between_posts(x)[1])
+
+    # Drop non blogs ie more than one author
     df = df[df['single_author']]
 
     return df
@@ -160,23 +175,60 @@ def relevant_blog(post_list, limit, key_words=KEY_WORDS):
         return False
 
 
-if __name__ == '__main__':
-    # Get Name to save pickled data frame as
-    if len(sys.argv) == 2:
-        save_name = sys.argv[1]
-    elif len(sys.argv) == 1:
-        save_name = DF_BLOGS_UNCHANGED_PICKLE
-    else:
-        print "ERROR usage: {}".format(PROPER_USAGE)
-        sys.exit(-1)
+def posts_to_likes(post_list):
+    """
+    DESCR: turns a list of posts into a list of likes
+    INPUT: list of posts
+    OUPUT: list of like counts
+    """
+    likes = []
+    for post in post_list:
+        try:
+            likes.append(post['like_count'])
+        except:
+            pass
+    likes.reverse()             # posts pulled newest to oldest
+    return likes
 
+
+def post_to_comments(post_list):
+    """
+    DESCR: turns a list of posts into a list of comments
+    INPUT: list of posts
+    OUPUT: list of comment counts
+    """
+    num_comments = []
+    for post in post_list:
+        try:
+            num_comments.append(post['discussion']['comment_count'])
+        except:
+            pass
+    num_comments.reverse()          # post pulled newest to oldest
+    return num_comments
+
+
+def avg_and_stddev_days_between_posts(post_list):
+    """
+    DESCR: calculates average time between posts and standard deviation
+    INPUT: lists of posts
+    OUPUT: tuple (avg, std)
+    """
+    dates = [date_convert_w_error(post['modified']) for post in post_list]
+    dates.reverse()
+    diffs = [next_one - current for current, next_one in zip(dates[:-1], dates[1:])]
+    diffs = [delta.days for delta in diffs]
+
+    return (np.mean(diffs), np.std(diffs))
+
+
+if __name__ == '__main__':
     # Build dataframe from mongo database
     print "Retrievin Data from mongo....."
     df = get_df(db_name='fitness_blogs_w_comments', coll_name='blogs')
     print "   Raw Data Frame has {} blogs".format(df.shape[0])
 
     # Filter blogs for relevance to topic by word list
-    df = filter_irrelevant_blogs(df, limit=0.6)
+    df = filter_irrelevant_blogs(df, limit=PERCENT_RELEVANT)
     print "   After filtering for relevance dataframe contains {} blogs".format(df.shape[0])
 
     # Clean up blog information, and toss multiple author 'non-blogs'
@@ -184,5 +236,7 @@ if __name__ == '__main__':
     print "   After cleaning dataframe contains {} blogs".format(df.shape[0])
 
     # Pickle dataframe for later use
-    df.to_pickle(save_name)
-    print "   Dataframe pickled to file name: {}".format(save_name)
+    df.to_pickle(BLOG_DF_W_POSTS_PICKLE)
+    df.drop('post_list', axis=1, inplace=True)
+    df.to_pickle(BLOG_DF_WO_POSTS_PICKLE)
+    print "   Dataframe with posts pickled to file name: {}".format(BLOG_DF_W_POSTS_PICKLE)
