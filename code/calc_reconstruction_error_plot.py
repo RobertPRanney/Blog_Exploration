@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
     # Load tfidf matrix to use
     print "Opening tfidf matrix for use......"
-    with open("post_tfidf_matrix.pkl", "r") as input_file:
+    with open("other_pickles/post_tfidf_matrix.pkl", "r") as input_file:
         tfidf_matrix = pickle.load(input_file)
 
     # calculate reconstruction erros

@@ -1,8 +1,5 @@
 *.json
-blog_urls/
-search_urls/
-wordpress_dataScience_blogs
 *.pyc
-data/
-.txt
+*.txt
 *.pkl
+*.ipynb_checkpoints

@@ -37,6 +37,7 @@ def topic_sizes(W_matrix, limit = 0.0):
 
 
 
+
 if __name__ == '__main__':
     # Descriptive words
     try:

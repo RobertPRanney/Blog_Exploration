@@ -2,7 +2,7 @@
 # Author: Robert Ranney
 # File: plot_confusion.py
 # Description: will plot all confution matrixes for all models
-# Usage: python plot_confusion.py
+# Usage: python plot_confusion.py <models_path> <df_path> <save_path>
 # Creation Date: 7/25/16
 # Last Revision: 7/25/16
 # Change Log:
@@ -18,6 +18,7 @@ import cPickle as pickle
 from sklearn.cross_validation import train_test_split
 import pandas as pd
 import numpy as np
+import sys
 
 # Constant Section
 RANDOM_NUM = 42         # for reproducibility between files and runs
@@ -25,7 +26,7 @@ RANDOM_NUM = 42         # for reproducibility between files and runs
 
 
 # Function Section
-def plot_confusion_matrix(cm, est_name, title='Confusion matrix', cmap=plt.cm.Blues):
+def plot_confusion_matrix(cm, est_name, save_loc, title='Confusion matrix', cmap=plt.cm.Blues):
     """
     DESCR: make confusion plot for a given confustion matrix save fig to files
     INPUT: cm - square array of int or floats, name for fig, title, color
@@ -41,15 +42,20 @@ def plot_confusion_matrix(cm, est_name, title='Confusion matrix', cmap=plt.cm.Bl
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
 
-    plt.savefig('plots/' + est_name + '.png', bbox_inches='tight')
+    plt.savefig(save_loc + est_name + '.png', bbox_inches='tight')
+    plt.close()
 
 
 
 if __name__ == '__main__':
+    # get paths to pull data and place results
+    models_path = sys.argv[1]
+    df_path = sys.argv[2]
+    save_path = sys.argv[3]
+
     #get some data
     # load in data and split for training
-    post_df_w_nmf = pd.read_pickle('post_df_w_nmf.pkl')
-    post_df_w_nmf.drop('content', axis=1, inplace=True)
+    post_df_w_nmf = pd.read_pickle(df_path)
     y = post_df_w_nmf.pop('success')
     target_names = np.array(['no traction', 'some traction', 'good traction', 'great traction'])
 
@@ -66,12 +72,12 @@ if __name__ == '__main__':
 
 
     # For every model in pickle folder, generate and save confusion_matrix
-    for i in os.listdir('pickled_models/'):
-        model = pickle.load ( open( 'pickled_models/'+str(i), 'rb') )
+    for i in os.listdir(models_path):
+        model = pickle.load ( open( models_path + str(i), 'rb') )
 
         # calculate confusion and then normalize
         cm = confusion_matrix(y_test ,model.predict(X_test), labels=target_names)
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
         # plot
-        plot_confusion_matrix(cm, str(i.split('.')[0]))
+        plot_confusion_matrix(cm, str(i.split('.')[0]), save_path)

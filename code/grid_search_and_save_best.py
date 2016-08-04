@@ -1,13 +1,14 @@
 ###--------------------------------------------------------------------------###
 # Author: Robert Ranney
-# File: blog_modeling.py
-# Description: functions similar to post modeling. Provides a framework for
-#              generating models on
+# File: grid_search_and_save_best.py
+# Description: will hold a framework to run grid search and pickle on variety
+#              of models, will allow choice of model and choice of cross
+#              validation error metric
 # Usage: python grid_search_and_save_best.py <model_name> <accuracy_score>
-# Creation Date: 7/27/16
-# Last Revision: 7/27/16
+# Creation Date: 7/24/16
+# Last Revision: 7/24/16
 # Change Log:
-#      7/27/16: file started
+#      7/24/16: file started
 ###--------------------------------------------------------------------------###
 
 # Import Section
@@ -23,11 +24,11 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.cross_validation import train_test_split
 from sklearn.ensemble import AdaBoostClassifier
-
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 
 # Constant Section
-RANDOM_NUM              = 42     # for reproducibility between files and runs
-BLOG_DF_CATEGORIZED     = 'pickled_dfs/blog_df_posts_categorized.pkl'
+RANDOM_NUM = 42         # for reproducibility between files and runs
 
 
 if __name__ == '__main__':
@@ -36,12 +37,7 @@ if __name__ == '__main__':
     score_name = sys.argv[2]
 
     # load in data and split for training
-    blog_df = pd.read_pickle(BLOG_DF_CATEGORIZED)
-
-    # featurized categories list
-    
-
-
+    post_df_w_nmf = pd.read_pickle('pickled_dfs/post_df_w_nmf.pkl')
     y = post_df_w_nmf.pop('success')
     target_names = np.array(['no traction', 'some traction', 'good traction', 'great traction'])
 
@@ -54,6 +50,10 @@ if __name__ == '__main__':
     try: post_df_w_nmf.drop('success', axis=1, inplace=True)
     except: pass
 
+    # Save most final dataframe
+    pickle.dump( post_df_w_nmf, open( 'pickled_dfs/final_post_df.pkl', "wb" ) )
+
+
     # Make splits
     X_train, X_test, y_train, y_test = train_test_split(post_df_w_nmf, y, test_size=0.1, random_state=RANDOM_NUM)
 
@@ -63,21 +63,27 @@ if __name__ == '__main__':
               'RandomForestClassifier': RandomForestClassifier(),
               'GradientBoostingClassifier': GradientBoostingClassifier(),
               'AdaBoostClassifier': AdaBoostClassifier(),
-              'GaussianNB': GaussianNB()}
+              'GaussianNB': GaussianNB(),
+              'LogisticRegression': LogisticRegression()}
 
     # Param dicts
     params = {
-              'MultinomialNB': {'alpha': [1.0, 0.7, 0.5, 0.3]},
-              'RandomForestClassifier': {'n_estimators': [10, 25, 100],
-                                         'criterion': ['gini', 'entropy'],
-                                         'max_features': [None, 'sqrt']},
+              'MultinomialNB': { 'alpha': [1.0, 0.7, 0.5, 0.3] },
+              'RandomForestClassifier': {'n_estimators': [100],
+                                         'max_depth': [None, 5, 12, 20],
+                                         'criterion': ['entropy'],
+                                         'max_features': [None, 'sqrt'] },
               'GradientBoostingClassifier': {'n_estimators': [50,100],
-                                             'max_depth': [3, 9, None],
+                                             'max_depth': [3, 9, 20, None],
                                              'min_samples_split': [2, 25],
-                                             'max_features': [None, 'sqrt']},
+                                             'max_features': [None, 'sqrt'] },
               'AdaBoostClassifier': {'n_estimators': [20, 50, 100],
-                                     'learning_rate': [1.0, 0.5, 0.2]},
-              'GaussianNB': {}
+                                     'learning_rate': [1.0, 0.5, 0.2] },
+              'GaussianNB': {},
+              'LogisticRegression': {'C': [1.0, 0.75, 0.5],
+                                     'fit_intercept': [True, False],
+                                     'solver': ['newton-cg'],
+                                     'max_iter': [10, 50, 100, 500] }
              }
 
     # Score dict

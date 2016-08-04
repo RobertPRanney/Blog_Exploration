@@ -14,7 +14,7 @@
 # Import Section
 import matplotlib.pyplot as plt
 import cPickle as pickle
-
+import seaborn as sns
 
 def make_recon_errors_plot(recon_errors, features):
     """
@@ -24,14 +24,20 @@ def make_recon_errors_plot(recon_errors, features):
     """
     fig, ax = plt.subplots()
     ax.plot(features, recon_errors)
-    ax.set(title='Reconstruction Error of Post tfidf After NMF', xlabel='Features', ylabel='Reconstruction Error')
-    plt.savefig('reconstruction_error.png')
+    ax.axvline(x=30, lw=2, color='r', ls='dashed')
+    ax.set_title('Reconstruction Error of Post tfidf After NMF', fontsize=20)
+
+    ax.set_xlabel('Number of Latent Features', fontsize=16)
+
+    ax.set_ylabel('Reconstruction Error', fontsize=16)
+
+    plt.savefig('from_aws/plots/reconstruction_error.png')
 
 
 if __name__ == '__main__':
     # Load tfidf matrix to use
     print "Opening list of errors...."
-    with open("recon_errors.pkl", "r") as input_file:
+    with open("from_aws/recon_errors.pkl", "r") as input_file:
         recon_errors = pickle.load(input_file)
 
     features = range(1, len(recon_errors)+1)

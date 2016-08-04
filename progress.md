@@ -61,15 +61,15 @@ I seem to have trouble remmbering from day to day so here I will keep track
 * blogs now have post classifcation lists
 * reduced nmf to 30 for interpretability
 
+##### 7/28 - Thursday
+* the topics are now named and in csv and can be merged into posts dataframe
+* some eda on full post data set, really not too interesting.
+* rerunning the stupid random forest, somehow the dumb thing is 4gigs large
 
-* TO DO:
-    1) start re running pipeline on aws, been lots of changes, maybe just delete and redo
-    1) polish resume,
-    3) Investigate on small local subset.
-    5) eda on data should be done soon for presentation purposes
-    6) should really do some topic exploration on whole awas data, will need to write locally first though.
-    7) if given time make multiclass roc curve
+##### 7/19 - Friday
+* resume finally to a usable state, could use some polish but not bad
 
 
-NLP For Post:
-3) encapsulate
+##### Got lazy with updates
+* Project done by 7/26
+* Results all compiled and presentation made

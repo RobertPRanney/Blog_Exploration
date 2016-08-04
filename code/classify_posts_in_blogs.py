@@ -10,11 +10,12 @@
 ###--------------------------------------------------------------------------###
 
 # Import Section
+from __future__ import division
 import numpy as np
 import pandas as pd
 import cPickle as pickle
 from bs4 import BeautifulSoup
-
+from collections import Counter
 
 # Constants and Globals
 BLOG_DF_W_POSTS_PICKLE      = 'pickled_dfs/blog_df_w_posts.pkl'
@@ -50,11 +51,37 @@ def classify_all_posts_in_blog(post_list):
     return post_class
 
 
+def calc_topic_percents(topic_list, ind=0):
+    """
+    DESC: return  the percent of a bog is in a given topic, 0 is first most
+          common, 1 is second most common etc...
+    INPUT: a list of topics [5,4,3,2...]
+    OUTPUT: float, ie 0.55 are in the second most common topci
+    """
+    try:
+        return Counter(topic_list).most_common()[ind][1] / len(topic_list)
+    except:
+        return 0.0
+
+
 def add_final_features(df):
+    """
+    DESCR: Some last mintue featue engineerig for blogs, taking into account the
+           newly classfied posts
+    INPUT: df
+    OUTPUT: df with a few extra columns
+    """
     df['highest_like'] = df['likts_history'].apply(max)
     df['highest_comments'] = df['comment_history'].apply(max)
     df['number_topics'] = df['post_topics'].apply(lambda x: len(set(x)))
-    df['highest_topic_percent'] = df['post_topics'].apply(lambda x: )
+    df['most_common_topic'] = df['post_topics'].apply(lambda x: Counter(x).most_common()[0][0])
+    df['highest_topic_percent'] = df['post_topics'].apply(lambda x: calc_topic_percents(x, 0))
+    df['second_highest_percent'] = df['post_topics'].apply(lambda x: calc_topic_percents(x, 1))
+    df['third_highest_percent'] = df['post_topics'].apply(lambda x: calc_topic_percents(x, 2))
+    df['single_topic_blog'] = df['highest_topic_percent'] > 0.85
+
+
+    return df
 
 
 if __name__ == '__main__':
@@ -76,6 +103,9 @@ if __name__ == '__main__':
     # Get rid of posts content to reduce size
     blog_df.drop('post_list', axis=1, inplace=True)
     blog_df.drop(['URL', 'description', 'icon', 'lang', 'single_author'], axis=1, inplace=True)
+
+    # Some last features
+    blog_df = add_final_features(blog_df)
 
     # Save for ML algorithms
     # still not quite done, but not sure how to deal with list contents
