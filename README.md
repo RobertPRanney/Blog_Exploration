@@ -40,3 +40,36 @@ place the current roadmap that I used will doing this project. This should serve
 as a passable guide understand how the functions work together.
 
 ![Code Roadmap: Re-organization still needed](./final_images/code_roadmap.png)
+
+
+##### Data Collection
+Data was collected from the wordpress api, which is super friendly and easy to
+use. Allows pulling of a public blogs information (most information), plus all
+of blogs posts, and its comments. This can be done by knowing a blogs url to get
+the unique ID. Amazingly there is no rate limiting or quota, and doesn't even
+require api keys. The less robust part of the data collection currently is how
+to collect the url links. I was going to scrape them from google search results,
+but quickly abandoned this idea due to the massive problems of that approach.
+Instead I found a fairly efficient manual method to gather about 10,000 google
+search result links in about an hour using the chrome 'link clump' add on. This
+deficiency is something I would like to address later given time. These 10,000
+yield 2500 blogs.
+
+##### Data storage
+A blog and all of its posts were pulled into a mongo db. This was done on an ec2
+instance, but with only 2500 blogs it was only about 3 Gb of data so it could
+have been done locally, but just for efficiency almost all analysis stayed up on
+the instance.
+
+##### Filtering
+Blogs were filtered for having multiples authors, too many post (>2500) and not
+seeming relevant based on not a high enough precent of posts containing fitness
+key words.
+
+##### Splitting
+From here posts are stripped out of blogs to model the things that contribute to
+successful posts.
+
+##### Natural Language Processing
+![NLP processing pipeline](./final_images/nlp_pipe.png)
+Beautiful Soup was used to pull text from html, from text is cleaned, stripped,
