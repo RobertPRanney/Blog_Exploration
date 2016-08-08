@@ -1,3 +1,18 @@
+###--------------------------------------------------------------------------###
+# Author: Robert Ranney (code adapted from ewellinger github.com/ewellinger)
+# File: ew_pred_prob.py
+# Description: a more custom approach to predicted value/prob than the sklearn
+#              built in one. Code adapted from erich wellingers random script
+#              repo.
+# Usage: import function to use elsewhere
+# Creation Date: 8/4/16
+# Last Revision: 8/4/16
+# Change Log:
+#      8/4/16: file created, Adapted to handle multi class predicted probability
+#              handles this by passing the desired class label to return
+#              prediction for.
+###--------------------------------------------------------------------------###
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
