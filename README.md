@@ -3,6 +3,10 @@
 #### Data Science Immersive Capstone project
 ---
 
+##### 5 Minute Presentation Slides
+[link to slidedeck](./presentation_slides.pdf)
+
+#### Long Version
 ###### Project Motivation
 Near the beginning of the galvanize DSI program I started a blog for myself. I
 wanted a place to help promote myself as I try to transition careers. A place to
