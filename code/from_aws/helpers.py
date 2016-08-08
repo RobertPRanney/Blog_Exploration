@@ -2,7 +2,7 @@ import numpy as np
 from wordcloud import WordCloud
 import cPickle as pickle
 import matplotlib.pyplot as plt
-
+import sys
 
 POST_TFIDF_PICKLE       = 'other_pickles/post_tfidf.pkl'
 POST_NMF_PICKLE         = 'other_pickles/post_nmf.pkl'
@@ -64,5 +64,6 @@ def tokenize_content(content):
     return tokens
 
 if __name__ == '__main__':
-    # Test code for generating words clouds
-    test = make_word_cloud(18)
+    # Generate a wordcloud
+    topic_num = sys.argv[1]
+    test = make_word_cloud(topic_num)
