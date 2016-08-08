@@ -72,4 +72,29 @@ successful posts.
 
 ##### Natural Language Processing
 ![NLP processing pipeline](./final_images/nlp_pipe.png)
-Beautiful Soup was used to pull text from html, from text is cleaned, stripped,
+Beautiful Soup was used to pull text from html, the text is cleaned, stripped,
+and lemmatized. The lemmatization metod chosen was the nltk wordnet lemmatizer.
+This needs to be re-examined though due to the odd words that made it through.
+The tokenized documents were converted to a tfidf matrix. The resulting matrix
+was then reduced with NMF, for this analysis 30 was chosen. A longer anaylsis,
+or one done with more post, or no topic division could use more, as it was 30
+seemed to give reasonable topics, but the reconstruction accuracy shows that it
+could have easier had more topics.
+![reconstruction error](./final_images/reconstruction_error.png)
+
+##### Topic analysis
+The resulting topics can be looked at by running helpers.py and giving the topic
+number for example topic 5 gives the picture below.
+![latent topic 5](./final_images/words_5.png)
+
+
+Some of the posts that made it throuhg topic filtering were obviously not within
+the realm of fitness though. For example one was very about german.
+![german latent features](./final_images/german_wc.png)
+
+
+looking at the number of posts that fall into topic shows that most did fit into
+the fitness topic
+![documents in each topic](./final_images/docs_by_topics.png)
+
+##### Machine Learning: posts
