@@ -65,5 +65,5 @@ def tokenize_content(content):
 
 if __name__ == '__main__':
     # Generate a wordcloud
-    topic_num = sys.argv[1]
+    topic_num = int(sys.argv[1])
     test = make_word_cloud(topic_num)

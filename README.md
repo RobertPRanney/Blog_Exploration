@@ -3,8 +3,9 @@
 #### Data Science Immersive Capstone project
 ---
 
-##### 5 Minute Presentation Slides
+#### 5 Minute Presentation Slides
 [link to slidedeck](./presentation_slides.pdf)
+
 
 #### Long Version
 ###### Project Motivation
@@ -101,4 +102,84 @@ looking at the number of posts that fall into topic shows that most did fit into
 the fitness topic
 ![documents in each topic](./final_images/docs_by_topics.png)
 
+<br>
 ##### Machine Learning: posts
+---
+Lots of different models to try and predict the success of posts were done.
+frame work to gridsearch to gridsearch over and then save the best model is
+stored in grid_search_and_save.py. The best models were always the ensemble
+models. To deal with the 'skewed' success metric (i.e. 50% of posts have zero
+likes and zero comments) the continuous variable was turned into a 4 categories.
+The best model was a random forest, but the adaboost and gradient boost really
+were very similar. The best one has a confusion matrix below.
+![Random Forest Confusion Matrix](./final_images/RFCConfMatr.png)
+This is obviously far from perfect but it does identify the great traction class
+fairly well. So some things can be learned from this. Individually the features
+can be examined to see there individual effects, not everything is important
+though. Looking at the built in feature importance shows this.
+![Feature Importance](./final_images/post_feat_imp.png)
+So we can ignore most of these, but lets look at the contribution of some more
+interesting ones.
+
+![sklearn built in](./final_images/all_partials.png)
+This is pretty nice to see trends, but It would be nice to see a few of these in
+terms of the actually probability of being in a particular class, specifically
+the probability of being in the most successful class. This is accomplished with
+a more custom script. Lets look at the effect of changing the number of tags
+since it is the most interesting.
+
+![Effect of Number of Words](./final_images/pred_num_tags.png)
+Just by judicious use of the number of tags a post can have a 10% higher change
+of making it into the most successful class of posts. Tags are blogger
+designated keywords that identify the topic that a post belongs in. These are
+then used in the internal topic listings for people to read posts in a certain
+topic. Wordpress allows up to 20 but says if you use 'too many' then the post
+will be listed less. This is to avoid users trying to abuse the topic listings
+since a post can't really be in every topic. So it seems that 'too many' is
+about 10. This was a nice point in the project, since the effect of this
+feature is explainable. This shows that the model is most likely picking up on
+real effects rather than trying to interpret noise.
+
+###### Summary of stuff a blogger can do to be more successful in posts
+* Always use 10 tags
+* Write longer posts (>1000 words) (might not generalize to other topics)
+* Add more images
+* Add more links to other sites
+* Use max number of categories
+* Post whenever (no noticable difference on weekends vs weekdays)
+
+<br>
+#### Machine Learning: Blogs
+---
+Identifying successful blogs is more straight forward, just try to create a
+model to predict number of subscribers. After investigating a number of options
+the best one turned out to be gradient boosting regressor, although like posts
+the ensemble models on a whole did about the same, and did far better than other
+things such as linear regression. Before fitting models outliers were tossed out
+since the median was about 25 but the max was up at 25,000 subscribers. The
+overal accuracy of the model was not great, about .55 r2, and rmse of 14.
+Visually this looks quite bad.
+![Predicted vs. Actual](./final_images/pred_act_scatter.png)
+Well this is pretty bad, but lets see what can be learned anyways. First lets
+look at feature importance.
+![feature importance for blogs](./final_images/blog_feature_importance1.png)
+Most of these make sense, if you have access to the number of likes for posts
+and number of comments for posts then making a guess at the number of
+subscribers doesn't seem like a far stretch. Again lets look at individual
+contributions.
+![some pdps](./final_images/pdp_selected_blogs.png)
+most of these seem pretty sensible, or might just be noise. Only thing
+I found interesting was the effect of the gap between posts (but it is a minor
+effect). Shown on a more interpretable scale this is seen below.
+![effect of post gap](./final_images/pred_ave_gap.png)
+So maybe putting more thought into a post a posting less than everyday is
+beneficial, hard to tell, might just be some noise. Another worth while note is
+that no topic really did any better for blogs once they were assigned a main
+topic.
+
+
+##### Thanks For Reading
+If you made it this far then thanks for reading, feel free to look at the code
+or anything else in the repo
+
+RR
